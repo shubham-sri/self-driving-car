@@ -4,7 +4,7 @@
 [image1]: ./examples/masked.png "Color Masked"
 [image2]: ./examples/blur.png "Blur"
 [image3]: ./examples/smooth.png "Smooth"
-[image4]: ./examples/result.ong "Result"
+[image4]: ./examples/result.png "Result"
 
 ---
 
