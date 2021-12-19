@@ -1,39 +1,79 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+## Advance Lane Detection
 
+[//]: # (Image References)
 
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
+[image1]: ./output_images/calibrated_test2.jpg "Undistorted"
+[image2]: ./output_images/threshold_calibrated_test6.jpg "Binary Example"
+[image3]: ./output_images/bird_eye_calibrated_test2.jpg "Warp Example"
+[image4]: ./output_images/sliding_window_calibrated_test2.jpg "Sliding Example"
+[image5]: ./output_images/final_calibrated_test2.jpg "Output"
 
-Creating a great writeup:
 ---
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
+## Steps for image and video pipeline
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
+**Notes:** All computation code is in ***src*** folder
 
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
+`src` folder consist files `distortion.py`, `line.py`, `prespective.py`, `thresholding.py` and `utils.py`. 
+To run project run `P2.ipynb` jupyter notebook
 
-The Project
----
+### Camera Calibration
 
-The goals / steps of this project are the following:
+#### 1. Class Distortion is used for camera calibration.
 
-* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-* Apply a distortion correction to raw images.
-* Use color transforms, gradients, etc., to create a thresholded binary image.
-* Apply a perspective transform to rectify binary image ("birds-eye view").
-* Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
-* Warp the detected lane boundaries back onto the original image.
-* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
+`class Distortion` defined in `src/distortion.py`. `Distortion` consist two methods `calculate` and `fix`. 
+The `calculate` method compute the `objpoints` and `imgpoints` using chess board image from `camera_cal` folder and `fix`
+method compute calibrated image using `objpoints` and `imgpoints` computed by `calculate` method.
 
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
+I stored `objpoints` and `imgpoints` in `Distortion` class as attributes and used it for future computation. 
 
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `output_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+Following is the output image of one of the test image
+![alt text][image1]
 
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
+#### 2. Class Thresholding is used for threshold image generation
 
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
+I computed `gradient` and `color` thresholding and combine it for computed threshold image  
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+Following is the output image of one of the test image
+![alt text][image2]
 
+#### 3. Class Perspective is used for bird eye view
+
+`Class Prespective` uses default config for `src` and `dst`
+```python
+src = np.float32([[200, 720], [1100, 720], [595, 450], [685, 450]])
+dst = np.float32([[300, 720], [980, 720], [300, 0], [980, 0]])
+```
+This class consist two `transform` and `inverse_transform`, `transform` to convert image to bird eye view and `inverse_transform` to reverse the transform
+
+I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+
+![alt text][image3]
+
+#### 4. Poly fit (this step consist two sub steps)
+
+All poly fit computation function defined in `Class Line`. Line class defined to Handle video and image both.
+
+#### 4.1 Only for image
+
+I used the `poly_sliding_window` method to fit poly line in image using sliding window algo.
+
+Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+![alt text][image4]
+
+#### 4.2 Only for video
+
+I used the `result` method with uses `poly_sliding_window` and `poly_search_around`. 
+On very 100 frames 10 frames are processed by sliding window and remaining are with search around also
+
+#### 5. For lane curvature and position of the vehicle used line class
+
+I used `class Line` which compute lane curvature using `calculate_curve`, `calculate_curve` uses `leftx`, `lefty`, `rightx`, `righty`.
+For vehicle position I used `calc_vehicle_offset` using `image_shape`, `left_fit`, `right_fit`.
+
+#### 6. For final result
+
+I implemented `plot_lines` in `utils.py` which draw lane overlay and inverse transform it and add it to undistorted image
+
+![alt text][image5]
+
+Here's a [link to my video result](./output_videos/project_video.mp4)
